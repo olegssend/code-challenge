@@ -1,16 +1,17 @@
 package com.hsbc.solution.service;
 
-import com.hsbc.solution.entity.TwitterUser;
+import com.hsbc.solution.dao.UserDao;
+import com.hsbc.solution.entity.Post;
 import com.hsbc.solution.entity.User;
-import com.hsbc.solution.entity.WallPost;
+import com.hsbc.solution.exception.TwitterException;
 import com.hsbc.solution.exception.TwitterUserNotFoundException;
+import com.hsbc.solution.validator.MessageValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -19,23 +20,30 @@ import java.util.stream.Collectors;
 @Service
 public class TwitterUserService implements UserService {
 
-    private Set<User> twitterUsers;
-
+    private UserDao userDao;
     private PostService postService;
+    private MessageValidator messageValidator;
 
     @Autowired
     public void setPostService(PostService postService) {
         this.postService = postService;
     }
 
-    public TwitterUserService() {
-        twitterUsers = new HashSet<>();
+    @Autowired
+    public void setMessageValidator(MessageValidator messageValidator) {
+        this.messageValidator = messageValidator;
+    }
+
+    @Autowired
+    public void setUserDao(UserDao userDao) {
+        this.userDao = userDao;
     }
 
     @Override
-    public void addPost(String requestedUserName, String message) {
+    public void addPost(String requestedUserName, String message) throws TwitterException {
+        messageValidator.validate(message);
         User requestedUser = getOrCreateNewUserByUserName(requestedUserName);
-        WallPost post = postService.createPost(limit140CharactersMessage(message));
+        Post post = postService.createPost(message);
         requestedUser.getWallPosts().add(post);
     }
 
@@ -47,7 +55,7 @@ public class TwitterUserService implements UserService {
     }
 
     @Override
-    public List<WallPost> getUsersWall(String requestedUserName) throws TwitterUserNotFoundException {
+    public List<Post> getUsersWall(String requestedUserName) throws TwitterUserNotFoundException {
         User requestedUser = getUserByUserName(requestedUserName);
         return requestedUser.getWallPosts()
                 .stream()
@@ -56,13 +64,11 @@ public class TwitterUserService implements UserService {
     }
 
     @Override
-    public List<WallPost> getUsersTimeline(String requestedUserName) throws TwitterUserNotFoundException {
-        User requestedUser = getUserByUserName(requestedUserName);
+    public List<Post> getUsersTimeline(String requestedUserName) throws TwitterUserNotFoundException {
 
-        List<WallPost> timeline = new ArrayList<>();
-        requestedUser.getFollowingList()
-                .forEach(user -> user.getWallPosts()
-                        .forEach(timeline::add));
+        List<Post> timeline = new ArrayList<>();
+        userDao.getFollowingListForUserName(requestedUserName)
+                .forEach(user -> timeline.addAll(postService.getPostsByUser(user)));
 
         return timeline.stream()
                 .sorted((p1, p2) -> p2.getPostTime().compareTo(p1.getPostTime()))
@@ -71,31 +77,26 @@ public class TwitterUserService implements UserService {
 
     private User getOrCreateNewUserByUserName(String userName) {
 
-        for (User existedUser : twitterUsers) {
-            if (existedUser.getUserName().equals(userName)) {
-                return existedUser;
-            }
-        }
-
-        User newUser = new TwitterUser(userName);
-        twitterUsers.add(newUser);
-        return newUser;
+        return userDao.getOrCreateNewUserByUserName(userName);
+//        Optional<User> userOptional = twitterUsers.stream()
+//                .filter(user -> user.getUserName().equals(userName))
+//                .findFirst();
+//
+//        return userOptional.orElseGet(() -> {
+//            User u = new TwitterUser(userName);
+//            twitterUsers.add(u);
+//            return u;
+//        });
     }
 
     private User getUserByUserName(String userName) throws TwitterUserNotFoundException {
-        for (User existedUser : twitterUsers) {
-            if (existedUser.getUserName().equals(userName)) {
-                return existedUser;
-            }
-        }
-        throw new TwitterUserNotFoundException(userName + " not found.");
-    }
 
-    private String limit140CharactersMessage(String message) {
-        if (message.length() <= 140) {
-            return message;
-        } else {
-            return message.substring(0, 140);
-        }
+        Optional<User> userOptional = Optional.of(userDao.getUserByUserName(userName));
+        return userOptional.orElseThrow(() -> new TwitterUserNotFoundException(userName + " not found"));
+
+//        return twitterUsers.stream()
+//                .filter(user -> user.getUserName().equals(userName))
+//                .findFirst()
+//                .orElseThrow(() -> new TwitterUserNotFoundException(userName + " not found."));
     }
 }

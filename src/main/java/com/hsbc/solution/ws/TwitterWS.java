@@ -1,23 +1,24 @@
 package com.hsbc.solution.ws;
 
-import com.hsbc.solution.entity.WallPost;
+import com.hsbc.solution.entity.Post;
+import com.hsbc.solution.exception.MessageTooLongException;
 import com.hsbc.solution.exception.TwitterUserNotFoundException;
 import com.hsbc.solution.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.GenericEntity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.util.List;
 
 /**
  * Created by seredao on 11.06.17.
  */
-@Component
-@Path("/")
-@Produces({MediaType.APPLICATION_XML})
+@RestController
+@RequestMapping(path = "/")
 public class TwitterWS {
 
     private UserService userService;
@@ -27,53 +28,50 @@ public class TwitterWS {
         this.userService = userService;
     }
 
-    @POST
-    public Response postMessage(String message,
-                                @HeaderParam("userId") String requestedUserName) {
+    @RequestMapping(method = RequestMethod.POST)
+    public ResponseEntity postMessage(String message,
+                                      @HeaderParam("userId") String requestedUserName) {
 
-        userService.addPost(requestedUserName, message);
-
-        return Response.status(Response.Status.CREATED).build();
+        try {
+            userService.addPost(requestedUserName, message);
+            return new ResponseEntity(HttpStatus.CREATED);
+        } catch (MessageTooLongException e) {
+            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+        }
     }
 
-    @PUT
-    @Path("follow/{userNameToFollow}")
-    public Response followUser(@PathParam("userNameToFollow") String userNameToFollow,
+    @RequestMapping(method = RequestMethod.PUT, path = "follow")
+    public ResponseEntity followUser(@RequestParam("userNameToFollow") String userNameToFollow,
                                @HeaderParam("userId") String requestedUserName) {
 
         try {
             userService.addUserToFollowList(requestedUserName, userNameToFollow);
-            return Response.ok().build();
+            return new ResponseEntity(HttpStatus.OK);
         } catch (TwitterUserNotFoundException e) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return new ResponseEntity(HttpStatus.NOT_FOUND);
         }
     }
 
-    @GET
-    @Path("wall")
-    public Response getWall(@HeaderParam("userId") String requestedUserName) {
+    @RequestMapping(method = RequestMethod.GET, path = "wall")
+    public ResponseEntity<?> getWall(@HeaderParam("userId") String requestedUserName) {
 
         try {
-            List<WallPost> wall = userService.getUsersWall(requestedUserName);
-            GenericEntity<List<WallPost>> entity = new GenericEntity<List<WallPost>>(wall) {
-            };
-            return Response.ok(entity).build();
+            List<Post> wall = userService.getUsersWall(requestedUserName);
+
+            return new ResponseEntity<>(wall, HttpStatus.OK);
         } catch (TwitterUserNotFoundException e) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return new ResponseEntity(HttpStatus.NOT_FOUND);
         }
     }
 
-    @GET
-    @Path("timeline")
-    public Response getTimeline(@HeaderParam("userId") String requestedUserName) {
+    @RequestMapping(method = RequestMethod.GET, path = "timeline")
+    public ResponseEntity<?> getTimeline(@HeaderParam("userId") String requestedUserName) {
 
         try {
-            List<WallPost> timeline = userService.getUsersTimeline(requestedUserName);
-            GenericEntity<List<WallPost>> entity = new GenericEntity<List<WallPost>>(timeline) {
-            };
-            return Response.ok(entity).build();
+            List<Post> timeline = userService.getUsersTimeline(requestedUserName);
+            return new ResponseEntity<>(timeline, HttpStatus.OK);
         } catch (TwitterUserNotFoundException e) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return new ResponseEntity(HttpStatus.NOT_FOUND);
         }
     }
 

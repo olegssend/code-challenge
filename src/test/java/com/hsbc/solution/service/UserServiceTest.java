@@ -1,12 +1,11 @@
 package com.hsbc.solution.service;
 
-import com.hsbc.solution.entity.WallPost;
+import com.hsbc.solution.entity.TwitterPost;
 import com.hsbc.solution.exception.TwitterUserNotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.List;
@@ -18,7 +17,6 @@ import static org.junit.Assert.assertTrue;
  * Created by seredao on 12.06.17.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "classpath:applicationContext.xml")
 public class UserServiceTest {
 
     private static boolean isSetupDone = false;
@@ -52,7 +50,7 @@ public class UserServiceTest {
                 "Pretty_Long_Post_Pretty_Long_Post_Pretty_Long_Post_Pretty_Long_Post_" +
                 "Pretty_Long_Post_Pretty_Long_Post_Pretty_Long_Post_Pretty_Long_Post_");
 
-        List<WallPost> wall = userService.getUsersWall("fourthUser");
+        List<TwitterPost> wall = userService.getUsersWall("fourthUser");
 
         assertTrue(wall.size() == 2);
         assertTrue(wall.get(1).getMessage().length() == 140);
@@ -65,7 +63,7 @@ public class UserServiceTest {
         userService.addUserToFollowList("firstUser", "secondUser");
         userService.addUserToFollowList("firstUser", "thirdUser");
 
-        List<WallPost> timeline = userService.getUsersTimeline("firstUser");
+        List<TwitterPost> timeline = userService.getUsersTimeline("firstUser");
 
         assertTrue(timeline.size() == 5);
         assertEquals(timeline.get(4).getMessage(), "Third Post");
@@ -83,9 +81,9 @@ public class UserServiceTest {
 
     @Test
     public void getUsersWall() throws Exception {
-        List<WallPost> firstWall = userService.getUsersWall("firstUser");
-        List<WallPost> secondWall = userService.getUsersWall("secondUser");
-        List<WallPost> thirdWall = userService.getUsersWall("thirdUser");
+        List<TwitterPost> firstWall = userService.getUsersWall("firstUser");
+        List<TwitterPost> secondWall = userService.getUsersWall("secondUser");
+        List<TwitterPost> thirdWall = userService.getUsersWall("thirdUser");
 
         assertTrue(firstWall.size() == 1);
         assertTrue(secondWall.size() == 2);
@@ -105,8 +103,8 @@ public class UserServiceTest {
         userService.addUserToFollowList("fourthUser", "secondUser");
         userService.addUserToFollowList("fourthUser", "thirdUser");
 
-        List<WallPost> firstTimeline = userService.getUsersTimeline("firstUser");
-        List<WallPost> fourthTimeline = userService.getUsersTimeline("fourthUser");
+        List<TwitterPost> firstTimeline = userService.getUsersTimeline("firstUser");
+        List<TwitterPost> fourthTimeline = userService.getUsersTimeline("fourthUser");
 
         System.out.println(fourthTimeline);
 
