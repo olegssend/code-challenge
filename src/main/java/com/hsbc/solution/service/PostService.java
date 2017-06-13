@@ -9,7 +9,7 @@ import java.util.List;
  * Created by seredao on 11.06.17.
  */
 public interface PostService {
-    Post createPost(String message);
+    Post createPostByUser(String message);
 
     List<? extends Post> getPostsByUser(User user);
 }

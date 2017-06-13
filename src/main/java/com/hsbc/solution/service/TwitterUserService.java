@@ -43,8 +43,7 @@ public class TwitterUserService implements UserService {
     public void addPost(String requestedUserName, String message) throws TwitterException {
         messageValidator.validate(message);
         User requestedUser = getOrCreateNewUserByUserName(requestedUserName);
-        Post post = postService.createPost(message);
-        requestedUser.getWallPosts().add(post);
+        postService.createPostByUser(requestedUser, message);
     }
 
     @Override

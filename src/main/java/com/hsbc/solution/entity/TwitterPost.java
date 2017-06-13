@@ -1,5 +1,7 @@
 package com.hsbc.solution.entity;
 
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Date;
 
@@ -10,6 +12,9 @@ import java.util.Date;
 public class TwitterPost implements Post {
 
     private Integer id;
+
+    @NotNull
+    @Size(max = 140)
     private String message;
     private Date postTime;
 

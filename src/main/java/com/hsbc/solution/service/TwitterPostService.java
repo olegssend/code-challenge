@@ -22,7 +22,7 @@ public class TwitterPostService implements PostService {
     }
 
     @Override
-    public Post createPost(String message) {
+    public Post createPostByUser(String message) {
 //        return new TwitterPost(id, message, new Date());
         return null;
     }
