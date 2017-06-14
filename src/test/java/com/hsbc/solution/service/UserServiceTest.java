@@ -1,13 +1,18 @@
 package com.hsbc.solution.service;
 
+import com.hsbc.solution.entity.Post;
 import com.hsbc.solution.entity.TwitterPost;
 import com.hsbc.solution.exception.TwitterUserNotFoundException;
+import com.hsbc.solution.main.Solution;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.Date;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -17,9 +22,8 @@ import static org.junit.Assert.assertTrue;
  * Created by seredao on 12.06.17.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes = {Solution.class})
 public class UserServiceTest {
-
-    private static boolean isSetupDone = false;
 
     private UserService userService;
 
@@ -30,43 +34,38 @@ public class UserServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        if (!isSetupDone) {
-            userService.addPost("firstUser", "First Post");
-            userService.addPost("secondUser", "First Post");
-            userService.addPost("secondUser", "Second Post");
-            userService.addPost("thirdUser", "First Post");
-            userService.addPost("thirdUser", "Second Post");
-            userService.addPost("thirdUser", "Third Post");
-        }
-        isSetupDone = true;
+        userService.addPost("firstUser", new TwitterPost(0, "First Post", new Date()));
+        userService.addPost("secondUser", new TwitterPost(0, "First Post", new Date()));
+        userService.addPost("secondUser", new TwitterPost(0, "Second Post", new Date()));
+        userService.addPost("thirdUser", new TwitterPost(0, "First Post", new Date()));
+        userService.addPost("thirdUser", new TwitterPost(0, "Second Post", new Date()));
+        userService.addPost("thirdUser", new TwitterPost(0, "Third Post", new Date()));
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        userService.cleanup();
     }
 
     @Test
     public void addPost() throws Exception {
-        userService.addPost("fourthUser", "First Post");
-        userService.addPost("fourthUser", "Pretty_Long_Post_Pretty_Long_Post_" +
-                "Pretty_Long_Post_Pretty_Long_Post_Pretty_Long_Post_Pretty_Long_Post_" +
-                "Pretty_Long_Post_Pretty_Long_Post_Pretty_Long_Post_Pretty_Long_Post_" +
-                "Pretty_Long_Post_Pretty_Long_Post_Pretty_Long_Post_Pretty_Long_Post_" +
-                "Pretty_Long_Post_Pretty_Long_Post_Pretty_Long_Post_Pretty_Long_Post_");
+        userService.addPost("fourthUser", new TwitterPost(0, "First Post", new Date()));
+        userService.addPost("fourthUser", new TwitterPost(0, "Second Post", new Date()));
 
-        List<TwitterPost> wall = userService.getUsersWall("fourthUser");
-
+        List<Post> wall = userService.getUsersWall("fourthUser");
         assertTrue(wall.size() == 2);
-        assertTrue(wall.get(1).getMessage().length() == 140);
-        assertEquals(wall.get(0).getMessage(), "First Post");
+        assertEquals(wall.get(1).getMessage(), "Second Post");
     }
-
 
     @Test
     public void addUserToFollowList() throws Exception {
         userService.addUserToFollowList("firstUser", "secondUser");
         userService.addUserToFollowList("firstUser", "thirdUser");
 
-        List<TwitterPost> timeline = userService.getUsersTimeline("firstUser");
+        List<Post> timeline = userService.getUsersTimeline("firstUser");
 
         assertTrue(timeline.size() == 5);
-        assertEquals(timeline.get(4).getMessage(), "Third Post");
+        assertEquals("Third Post", timeline.get(4).getMessage());
     }
 
     @Test(expected = TwitterUserNotFoundException.class)
@@ -81,14 +80,14 @@ public class UserServiceTest {
 
     @Test
     public void getUsersWall() throws Exception {
-        List<TwitterPost> firstWall = userService.getUsersWall("firstUser");
-        List<TwitterPost> secondWall = userService.getUsersWall("secondUser");
-        List<TwitterPost> thirdWall = userService.getUsersWall("thirdUser");
+        List<Post> firstWall = userService.getUsersWall("firstUser");
+        List<Post> secondWall = userService.getUsersWall("secondUser");
+        List<Post> thirdWall = userService.getUsersWall("thirdUser");
 
         assertTrue(firstWall.size() == 1);
         assertTrue(secondWall.size() == 2);
         assertTrue(thirdWall.size() == 3);
-        assertEquals(thirdWall.get(2).getMessage(), "Third Post");
+        assertEquals("Third Post", thirdWall.get(2).getMessage());
     }
 
     @Test(expected = TwitterUserNotFoundException.class)
@@ -98,19 +97,18 @@ public class UserServiceTest {
 
     @Test
     public void getUsersTimeline() throws Exception {
-        userService.addPost("fourthUser", "First Post");
+        userService.addPost("fourthUser", new TwitterPost(0, "Third Post", new Date()));
         userService.addUserToFollowList("fourthUser", "firstUser");
         userService.addUserToFollowList("fourthUser", "secondUser");
         userService.addUserToFollowList("fourthUser", "thirdUser");
 
-        List<TwitterPost> firstTimeline = userService.getUsersTimeline("firstUser");
-        List<TwitterPost> fourthTimeline = userService.getUsersTimeline("fourthUser");
+        List<Post> firstTimeline = userService.getUsersTimeline("firstUser");
+        List<Post> fourthTimeline = userService.getUsersTimeline("fourthUser");
 
         System.out.println(fourthTimeline);
 
         assertTrue(firstTimeline.size() == 0);
         assertTrue(fourthTimeline.size() == 6);
-
     }
 
 }

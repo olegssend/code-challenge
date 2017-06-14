@@ -1,7 +1,8 @@
 package com.hsbc.solution.ws;
 
 import com.hsbc.solution.entity.Post;
-import com.hsbc.solution.exception.MessageTooLongException;
+import com.hsbc.solution.entity.TwitterPost;
+import com.hsbc.solution.exception.TwitterException;
 import com.hsbc.solution.exception.TwitterUserNotFoundException;
 import com.hsbc.solution.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,20 +30,19 @@ public class TwitterWS {
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity postMessage(String message,
-                                      @HeaderParam("userId") String requestedUserName) {
+    public ResponseEntity postMessage(TwitterPost twitterPost
+            , @RequestParam String requestedUserName) {
 
         try {
-            userService.addPost(requestedUserName, message);
+            userService.addPost(requestedUserName, twitterPost);
             return new ResponseEntity(HttpStatus.CREATED);
-        } catch (MessageTooLongException e) {
+        } catch (TwitterException e) {
             return new ResponseEntity(HttpStatus.BAD_REQUEST);
         }
     }
 
     @RequestMapping(method = RequestMethod.PUT, path = "follow")
-    public ResponseEntity followUser(@RequestParam("userNameToFollow") String userNameToFollow,
-                               @HeaderParam("userId") String requestedUserName) {
+    public ResponseEntity followUser(@RequestParam("userNameToFollow") String userNameToFollow, String requestedUserName) {
 
         try {
             userService.addUserToFollowList(requestedUserName, userNameToFollow);
@@ -53,7 +53,7 @@ public class TwitterWS {
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "wall")
-    public ResponseEntity<?> getWall(@HeaderParam("userId") String requestedUserName) {
+    public ResponseEntity<?> getWall(String requestedUserName) {
 
         try {
             List<Post> wall = userService.getUsersWall(requestedUserName);
@@ -65,7 +65,7 @@ public class TwitterWS {
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "timeline")
-    public ResponseEntity<?> getTimeline(@HeaderParam("userId") String requestedUserName) {
+    public ResponseEntity<?> getTimeline(String requestedUserName) {
 
         try {
             List<Post> timeline = userService.getUsersTimeline(requestedUserName);

@@ -15,4 +15,18 @@ public class TwitterUser implements User {
         return userName;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TwitterUser that = (TwitterUser) o;
+
+        return userName != null ? userName.equals(that.userName) : that.userName == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return userName != null ? userName.hashCode() : 0;
+    }
 }
